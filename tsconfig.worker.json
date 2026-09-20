@@ -1,0 +1,8 @@
+{
+  "extends": "./tsconfig.node.json",
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.cache/nodeflare/tsconfig.worker.tsbuildinfo",
+    "types": ["./worker-configuration.d.ts"]
+  },
+  "include": ["worker", "shared", "worker-configuration.d.ts"]
+}

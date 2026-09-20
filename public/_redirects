@@ -1,0 +1,4 @@
+# 管理面板是独立入口（admin.html），SPA fallback 只会回 index.html，
+# 所以要把 /admin 与 /admin/* 重写到 /admin.html（200 = 代理，不跳转）。
+/admin /admin.html 200
+/admin/* /admin.html 200

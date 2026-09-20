@@ -1,0 +1,35 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "nodeflare-demo",
+  "main": "worker/index.ts",
+  "compatibility_date": "2026-09-20",
+  // 不启用日志：关闭 Workers Logs 持久化、invocation 日志与 traces。
+  // 注意 Workers Logs 对新 Worker 默认开启，所以要显式关掉。
+  "observability": {
+    "enabled": false,
+    "logs": {
+      "enabled": false,
+      "invocation_logs": false,
+      "persist": false
+    },
+    "traces": {
+      "enabled": false,
+      "persist": false
+    }
+  },
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "html_handling": "none",
+    "not_found_handling": "single-page-application"
+  },
+  // 只声明 binding，不写 id：wrangler 部署时会自动创建 KV 命名空间并回写 ID。
+  "kv_namespaces": [
+    {
+      "binding": "DEMO_KV"
+    }
+  ],
+  "build": {
+    "command": "bun run build"
+  }
+}

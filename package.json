@@ -1,0 +1,31 @@
+{
+  "name": "nodeflare-demo",
+  "version": "1.0.0",
+  "private": true,
+  "repository": "https://github.com/elysia62/NodeFlare",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "test": "bun test",
+    "build": "tsc -b && vite build",
+    "preview": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "cf-typegen": "wrangler types",
+    "check": "wrangler deploy --dry-run"
+  },
+  "dependencies": {
+    "lucide-react": "^1.40.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "recharts": "^3.10.1"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.4.0",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.7",
+    "@vitejs/plugin-react": "^6.1.1",
+    "typescript": "^7.0.2",
+    "vite": "^8.2.2",
+    "wrangler": "^4.135.0"
+  }
+}
