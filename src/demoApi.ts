@@ -1,5 +1,4 @@
 import { demoAdminServer, demoConfig, demoExchangeRates, demoHistory, demoLatencyHistory, demoLatencyTasks, demoServersAt } from "../shared/demo";
-import { derivePassword } from "../shared/password";
 import type { AlertRule, DatabaseStats, LatencyTask, Settings, TelegramSettings, Theme, ThemeSettingsSchema } from "../shared/types";
 
 const SESSION_KEY = "nodeflare-demo-session";
@@ -42,17 +41,6 @@ const database: DatabaseStats = {
   kind: "sqlite", size_bytes: 48 * 1024 ** 2, reclaimable_bytes: 3 * 1024 ** 2, restart_required: false,
 };
 
-// PBKDF2-SHA256(600k rounds, `nodeflare:${password_client_salt}`) of "admin",
-// computed once at module load. Derived lazily so tests can import this module
-// in environments without WebCrypto.
-let adminDerived: string | null = null;
-async function isDemoAdminDerived(value: string) {
-  if (adminDerived === null) {
-    adminDerived = await derivePassword("admin", demoConfig.password_client_salt);
-  }
-  return value === adminDerived;
-}
-
 // Only the login marker is stored. All data is generated locally and every
 // unlisted operation is rejected, including read-looking backup endpoints.
 export function createDemoRequest(store?: SessionStore) {
@@ -75,12 +63,11 @@ export function createDemoRequest(store?: SessionStore) {
     const route = url.pathname;
     const fail = (error: string, status: number) => Response.json({ error }, { status });
     if (route === "/api/admin/login" && method === "POST") {
-      // The UI always sends a PBKDF2-derived password, so the demo pins the
-      // derived value of "admin" instead of the raw credential.
-      let credentials: { username?: string; password_derived?: string } | null = null;
+      // 演示站凭据为明文，直接比较（与 Worker 端行为一致）。
+      let credentials: { username?: string; password?: string } | null = null;
       try { credentials = JSON.parse(String(init.body)); }
       catch { return fail("请输入账号和密码", 400); }
-      if (credentials?.username !== "admin" || !credentials.password_derived || !(await isDemoAdminDerived(credentials.password_derived))) {
+      if (credentials?.username !== "admin" || credentials?.password !== "admin") {
         return fail("账号或密码错误", 401);
       }
       setSession(true);

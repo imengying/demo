@@ -44,15 +44,15 @@ export async function handleApi(request: Request, env: Env, startedAt: number): 
   const now = Math.floor(Date.now() / 1000);
 
   if (route === "/api/admin/login" && method === "POST") {
-    let credentials: { username?: string; password_derived?: string } | null = null;
+    let credentials: { username?: string; password?: string } | null = null;
     try { credentials = JSON.parse(await request.text()); }
     catch { return fail("请输入账号和密码", 400); }
     const admin = await loadAdmin(env);
-    // 前端提交的是 PBKDF2 派生值，明文密码从不上网；比较用定长算法避免时序泄露。
+    // 明文比较（演示站凭据只读，不做密码学加固；比较用定长算法避免时序泄露）。
     const username = String(credentials?.username ?? "");
-    const derived = String(credentials?.password_derived ?? "");
+    const password = String(credentials?.password ?? "");
     const okUsername = timingSafeEqual(username, admin.username);
-    const okPassword = derived.length > 0 && timingSafeEqual(derived, admin.password_derived);
+    const okPassword = password.length > 0 && timingSafeEqual(password, admin.password);
     if (!okUsername || !okPassword) return fail("账号或密码错误", 401);
     const token = await createSession(env);
     return json({ token: "demo-only" }, 200, { "Set-Cookie": sessionCookie(token, SESSION_MAX_AGE) });

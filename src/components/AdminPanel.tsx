@@ -24,7 +24,6 @@ import { ADMIN_UNAUTHORIZED_EVENT, api, ApiError } from "../api";
 import { ui } from "../locale";
 import { adminTabFromPath, adminTabPaths, canonicalAdminPath, currentAdminPath, adminRouteHref, type AdminTab } from "../adminRoutes";
 import { formatBytes, formatByteSize, parseByteSize } from "../format";
-import { derivePassword } from "../../shared/password";
 import { hasActiveRemoteTasks, isRemoteTaskActive, REMOTE_TASK_POLL_INTERVAL_MS, REMOTE_TASK_POLL_TIMEOUT_MS } from "../refresh";
 import { demoMode, dashboardHref } from "../demoMode";
 import { DEMO_REFRESH_INTERVAL_MS, demoDraftServer, demoServersAt } from "../../shared/demo";
@@ -277,8 +276,7 @@ export function AdminPanel({
   }, [twoFactorSecretCopied]);
 
   async function handleLoginSubmit(loginUsername: string, loginPassword: string, turnstileToken: string, totpCode: string) {
-    const passwordDerived = await derivePassword(loginPassword, config.password_client_salt, locale);
-    await api.login(loginUsername.trim(), passwordDerived, turnstileToken, totpCode);
+    await api.login(loginUsername.trim(), loginPassword, turnstileToken, totpCode);
     setAuthenticated(true);
     await load();
   }
@@ -437,16 +435,13 @@ export function AdminPanel({
     const payload: Partial<Settings> = { ...settings };
     delete payload.admin_password_configured;
     delete payload.totp_login_enabled;
-    delete payload.current_password_derived;
+    delete payload.current_password;
     delete payload.current_totp_code;
     try {
       if (payload.new_password) {
         if (payload.new_password !== newPasswordConfirmation) throw new Error(ui(locale, "两次输入的新密码不一致", "The two new passwords do not match"));
-        payload.new_password_derived = await derivePassword(payload.new_password, config.password_client_salt, locale);
-        delete payload.new_password;
       } else {
         delete payload.new_password;
-        delete payload.new_password_derived;
       }
       if (tab === "security") {
         const proof = await sensitiveProof(ui(locale, "保存设置", "Save settings"));
@@ -454,7 +449,7 @@ export function AdminPanel({
         if (proof.totpCode) {
           payload.current_totp_code = proof.totpCode;
         } else {
-          payload.current_password_derived = proof.passwordDerived;
+          payload.current_password = proof.password;
         }
       }
       const result = await api.saveSettings(payload);
@@ -484,7 +479,7 @@ export function AdminPanel({
     const entered = await verificationDialog.ask(action, twoFactorStatus.enabled);
     if (entered === null) return null;
     if (twoFactorStatus.enabled) return { totpCode: entered };
-    return { passwordDerived: await derivePassword(entered, config.password_client_salt, locale) };
+    return { password: entered };
   }
 
   async function reclaimDatabase() {

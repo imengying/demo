@@ -4,12 +4,11 @@
 // 而 CPU/内存/网速这类波形是按秒实时算出来的 —— 把时序样本写进 KV 既没意义
 // （KV 是最终一致的键值存储，不当时间序列用），也会让卡片失去实时感。
 import { demoConfig, demoExchangeRates, demoLatencyTasks, demoServers } from "../shared/demo";
-import { derivePassword } from "../shared/password";
 import type { AlertRule, Config, ExchangeRates, LatencyTestPoint, Server, Settings, TelegramSettings } from "../shared/types";
 
-const CATALOG_KEY = "demo:catalog";
-const ADMIN_KEY = "demo:admin";
-const SESSION_PREFIX = "demo:session:";
+const CATALOG_KEY = "nodeflare:catalog";
+const ADMIN_KEY = "nodeflare:admin";
+const SESSION_PREFIX = "nodeflare:session:";
 const SESSION_TTL_SECONDS = 86_400;
 
 const SESSION_COOKIE = "nodeflare_demo_session";
@@ -29,9 +28,9 @@ export interface Catalog {
 
 interface AdminRecord {
   username: string;
-  /** PBKDF2-SHA256 派生值（十六进制），前端登录时提交同款派生值，明文密码从不上网。 */
-  password_derived: string;
-  salt: string;
+  /** 明文密码。演示站凭据存 KV 且只读，不追求密码学强度；
+   *  之前存 PBKDF2 600k 派生值会在 Worker 里爆 CPU 时间限制（线上 error 1101）。 */
+  password: string;
 }
 
 function seedCatalog(): Catalog {
@@ -61,19 +60,18 @@ function seedCatalog(): Catalog {
 
 /** 读取目录；首次访问时用默认值播种，之后可以直接在 Cloudflare 控制台里改 KV。 */
 export async function loadCatalog(env: Env): Promise<Catalog> {
-  const cached = (await env.DEMO_KV.get(CATALOG_KEY, "json")) as Catalog | null;
+  const cached = (await env.KV.get(CATALOG_KEY, "json")) as Catalog | null;
   if (cached) return cached;
   const seed = seedCatalog();
-  await env.DEMO_KV.put(CATALOG_KEY, JSON.stringify(seed));
+  await env.KV.put(CATALOG_KEY, JSON.stringify(seed));
   return seed;
 }
 
 export async function loadAdmin(env: Env): Promise<AdminRecord> {
-  const cached = (await env.DEMO_KV.get(ADMIN_KEY, "json")) as AdminRecord | null;
+  const cached = (await env.KV.get(ADMIN_KEY, "json")) as AdminRecord | null;
   if (cached) return cached;
-  const salt = demoConfig.password_client_salt;
-  const record: AdminRecord = { username: "admin", password_derived: await derivePassword("admin", salt), salt };
-  await env.DEMO_KV.put(ADMIN_KEY, JSON.stringify(record));
+  const record: AdminRecord = { username: "admin", password: "admin" };
+  await env.KV.put(ADMIN_KEY, JSON.stringify(record));
   return record;
 }
 
@@ -90,7 +88,7 @@ export function timingSafeEqual(left: string, right: string): boolean {
 
 export async function createSession(env: Env): Promise<string> {
   const token = `${crypto.randomUUID()}${crypto.randomUUID()}`.replace(/-/g, "");
-  await env.DEMO_KV.put(
+  await env.KV.put(
     `${SESSION_PREFIX}${token}`,
     JSON.stringify({ created_at: Math.floor(Date.now() / 1000) }),
     { expirationTtl: SESSION_TTL_SECONDS },
@@ -110,12 +108,12 @@ function readSessionCookie(request: Request): string | null {
 export async function hasSession(env: Env, request: Request): Promise<boolean> {
   const token = readSessionCookie(request);
   if (!token) return false;
-  return (await env.DEMO_KV.get(`${SESSION_PREFIX}${token}`)) !== null;
+  return (await env.KV.get(`${SESSION_PREFIX}${token}`)) !== null;
 }
 
 export async function destroySession(env: Env, request: Request): Promise<void> {
   const token = readSessionCookie(request);
-  if (token) await env.DEMO_KV.delete(`${SESSION_PREFIX}${token}`);
+  if (token) await env.KV.delete(`${SESSION_PREFIX}${token}`);
 }
 
 export function sessionCookie(token: string, maxAge: number): string {

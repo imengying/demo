@@ -62,13 +62,14 @@ async function request<T>(path: string, init: RequestInit = {}, admin = false): 
 
 interface SensitiveProof {
   totpCode?: string;
-  passwordDerived?: string;
+  /** 明文密码（演示站凭据只读，不做密码学加固）。 */
+  password?: string;
 }
 
 function sensitiveHeaders(proof: SensitiveProof): Headers {
   const headers = new Headers();
   if (proof.totpCode) headers.set("X-NodeFlare-TOTP", proof.totpCode);
-  if (proof.passwordDerived) headers.set("X-NodeFlare-Password", proof.passwordDerived);
+  if (proof.password) headers.set("X-NodeFlare-Password", proof.password);
   return headers;
 }
 
@@ -83,10 +84,10 @@ export const api = {
     request<{ tasks: LatencyTestPoint[]; points: LatencySample[] }>(`/api/latency/${encodeURIComponent(id)}?hours=${hours}`, { cache: "no-store", signal: AbortSignal.timeout(15_000) }),
   verifyTurnstile: (token: string) =>
     request<void>("/api/turnstile/verify", { method: "POST", body: JSON.stringify({ token }) }),
-  login: async (username: string, passwordDerived: string, turnstileToken: string, totpCode = "") => {
+  login: async (username: string, password: string, turnstileToken: string, totpCode = "") => {
     await request<{ token: string }>("/api/admin/login", {
       method: "POST",
-      body: JSON.stringify({ username, password_derived: passwordDerived, turnstile_token: turnstileToken, totp_code: totpCode }),
+      body: JSON.stringify({ username, password, turnstile_token: turnstileToken, totp_code: totpCode }),
     });
   },
   logout: () => request<void>("/api/admin/logout", { method: "POST" }),

@@ -25,7 +25,6 @@ export interface Config {
   turnstile_login_enabled: boolean;
   totp_login_enabled: boolean;
   turnstile_site_key: string;
-  password_client_salt: string;
 }
 
 export type ThemeSettingValue = string | number | boolean;
@@ -274,12 +273,13 @@ export interface ServerInput {
   auto_update: boolean;
 }
 
-export interface Settings extends Omit<Config, "password_client_salt"> {
+export interface Settings extends Config {
   admin_username: string;
   admin_password_configured: boolean;
+  /** 新密码，明文（演示站凭据只读，不做密码学加固）。 */
   new_password?: string;
-  new_password_derived?: string;
-  current_password_derived?: string;
+  /** 当前密码，明文，用于敏感操作的再验证。 */
+  current_password?: string;
   current_totp_code?: string;
   turnstile_secret_key: string;
   notification_enabled: boolean;

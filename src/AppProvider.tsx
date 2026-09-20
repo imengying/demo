@@ -21,7 +21,6 @@ import {
 } from "./refresh";
 import { connectLive } from "./transport";
 import type { Config, ExchangeRates, Server } from "../shared/types";
-import { derivePassword } from "../shared/password";
 
 import { demoMode } from "./demoMode";
 
@@ -175,11 +174,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = useCallback(async (username: string, password: string, turnstileToken: string, totpCode: string) => {
-    const derived = await derivePassword(password, config.password_client_salt, config.locale);
-    await api.login(username.trim(), derived, turnstileToken, totpCode);
+    await api.login(username.trim(), password, turnstileToken, totpCode);
     setAccess("ok");
     await reload();
-  }, [config.password_client_salt, reload]);
+  }, [reload]);
 
   const verify = useCallback(async (token: string) => {
     await api.verifyTurnstile(token);

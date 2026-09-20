@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { createDemoRequest } from "./demoApi";
 import { demoDraftServer, demoHistory, demoServersAt } from "../shared/demo";
-import { derivePassword } from "../shared/password";
+import { OFFLINE_SERVER_ID } from "../shared/sampling";
 
 // A storage stub matching the Pick<Storage> surface the demo request accepts.
 function memoryStore() {
@@ -18,14 +18,12 @@ function post(request: ReturnType<typeof createDemoRequest>, path: string, body:
 }
 
 describe("demo admin session", () => {
-  test("accepts only the derived admin / admin credentials", async () => {
+  test("accepts only the admin / admin credentials", async () => {
     const request = createDemoRequest(memoryStore());
-    const derived = await derivePassword("admin", "nodeflare-demo-password-kdf");
-    const wrong = await derivePassword("admin123", "nodeflare-demo-password-kdf");
 
-    expect((await post(request, "/api/admin/login", { username: "admin", password_derived: wrong })).status).toBe(401);
-    expect((await post(request, "/api/admin/login", { username: "root", password_derived: derived })).status).toBe(401);
-    const ok = await post(request, "/api/admin/login", { username: "admin", password_derived: derived });
+    expect((await post(request, "/api/admin/login", { username: "admin", password: "admin123" })).status).toBe(401);
+    expect((await post(request, "/api/admin/login", { username: "root", password: "admin" })).status).toBe(401);
+    const ok = await post(request, "/api/admin/login", { username: "admin", password: "admin" });
     expect(ok.status).toBe(200);
     expect(await ok.json()).toEqual({ token: "demo-only" });
   });
@@ -34,10 +32,7 @@ describe("demo admin session", () => {
     const request = createDemoRequest(memoryStore());
     expect((await request("/api/admin/settings")).status).toBe(401);
 
-    await post(request, "/api/admin/login", {
-      username: "admin",
-      password_derived: await derivePassword("admin", "nodeflare-demo-password-kdf"),
-    });
+    await post(request, "/api/admin/login", { username: "admin", password: "admin" });
     const settings = await request("/api/admin/settings");
     expect(settings.status).toBe(200);
     expect((await settings.json()).admin_username).toBe("admin");
@@ -51,10 +46,7 @@ describe("demo admin session", () => {
 
   test("covers the admin tabs the demo UI renders", async () => {
     const request = createDemoRequest(memoryStore());
-    await post(request, "/api/admin/login", {
-      username: "admin",
-      password_derived: await derivePassword("admin", "nodeflare-demo-password-kdf"),
-    });
+    await post(request, "/api/admin/login", { username: "admin", password: "admin" });
     for (const path of [
       "/api/admin/servers",
       "/api/admin/settings",
@@ -79,7 +71,7 @@ describe("demo admin session", () => {
 describe("demo live waveform", () => {
   test("cycles metric values over the shared period and stays bounded", () => {
     const samples = [0, 60, 119].map((offset) => demoServersAt(1_800_000_000 + offset));
-    const online = samples[0].filter((server) => server.id !== "toronto-standby");
+    const online = samples[0].filter((server) => server.id !== OFFLINE_SERVER_ID);
     expect(online.length).toBeGreaterThan(0);
 
     // Values actually move between samples for every online server...
@@ -97,7 +89,7 @@ describe("demo live waveform", () => {
     }
     // ...and the offline standby server reports zero traffic at every phase.
     for (const sample of samples) {
-      const standby = sample.find((server) => server.id === "toronto-standby");
+      const standby = sample.find((server) => server.id === OFFLINE_SERVER_ID);
       expect(standby?.net_in).toBe(0);
       expect(standby?.cpu).toBe(0);
     }
@@ -105,10 +97,10 @@ describe("demo live waveform", () => {
 
   test("keeps history and current samples on the same waveform", () => {
     const at = Math.floor(Date.now() / 1000);
-    const history = demoHistory("hongkong-edge", 1, at);
+    const history = demoHistory("hk-aliyun", 1, at);
     expect(history.length).toBeGreaterThan(1);
     const latest = history[history.length - 1];
-    const current = demoServersAt(at).find((server) => server.id === "hongkong-edge");
+    const current = demoServersAt(at).find((server) => server.id === "hk-aliyun");
     expect(current).toBeDefined();
     // The last history point and the live card read the same timestamp, so
     // the values must match exactly.
