@@ -42,8 +42,10 @@
 
 ## 本地开发
 
+使用 Bun **1.4.2**（与 `package.json` 中的 `packageManager` 保持一致）。
+
 ```bash
-bun install
+bun install --frozen-lockfile
 bun run dev          # Vite 开发服务器（HMR），默认走前端模拟；带 ?demo=1 看演示版
 ```
 
@@ -56,12 +58,28 @@ bun run preview      # wrangler dev，含 KV、WebSocket，最接近线上
 首次运行会自动往 KV 播种默认数据。想改数据，直接在 Cloudflare 控制台或本地
 `.wrangler/state` 里改 KV，不用动代码。
 
-## 部署
+### Cloudflare 网页连接 Git 仓库部署
 
-```bash
-bunx wrangler login   # 首次
-bun run deploy        # 自动 build，再上传 Worker + 静态资源
-```
+在 Workers 项目中设置：
+
+| 设置 | 值 |
+| --- | --- |
+| 根目录 | `/` |
+| 构建命令 | `bun run build` |
+| 部署命令 | `bunx wrangler deploy` |
+| 构建变量 `BUN_VERSION` | `1.4.2` |
+
+`BUN_VERSION` 需要添加到 **设置 → 构建 → 构建变量和机密**
+（Settings → Build → Build Variables and Secrets），保存后重新部署。
+这是构建环境变量，不是 Worker 运行时变量，也不要放到 `wrangler.jsonc` 的 `vars` 中。
+`packageManager` 用来声明项目使用的版本，Cloudflare 构建环境仍需显式设置 `BUN_VERSION`。
+
+Cloudflare 当前默认的 Bun 1.2.15 无法读取本项目的 `bun.lock`（`lockfileVersion: 2`），
+会在自动执行 `bun install --frozen-lockfile` 时出现 `Unknown lockfile version`。
+依赖安装早于构建命令，因此在构建命令里升级 Bun 无法解决这个错误；应通过构建变量指定版本，保留锁文件。
+参见 [Cloudflare 构建镜像文档](https://developers.cloudflare.com/workers/ci-cd/builds/build-image/)。
+
+`wrangler.jsonc` 已配置自动执行 `bun run build`，也可以将网页上的构建命令留空，避免重复构建。
 
 ## 命令
 
@@ -73,4 +91,3 @@ bun run deploy        # 自动 build，再上传 Worker + 静态资源
 | `bun run deploy` | 构建并部署 |
 | `bun test` | 单元测试 |
 | `bun run cf-typegen` | 改过 `wrangler.jsonc` 后重新生成类型 |
-

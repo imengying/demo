@@ -1,6 +1,6 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
-  "name": "nodeflare-demo",
+  "name": "dash",
   "main": "worker/index.ts",
   "compatibility_date": "2026-09-20",
   // 不启用日志：关闭 Workers Logs 持久化、invocation 日志与 traces。
