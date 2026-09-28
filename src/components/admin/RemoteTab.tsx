@@ -46,7 +46,10 @@ export function RemoteTab({ locale, servers, busy, selectTab, createRemoteTask, 
           <div className="server-picker-head"><strong>{ui(locale, "选择服务器", "Select servers")}</strong><span>{ui(locale, `已选 ${remoteSelectedIds.length} / 共 ${servers.length}`, `Selected ${remoteSelectedIds.length} / ${servers.length}`)}</span><button type="button" onClick={() => setRemoteSelectedIds(remoteAllSelected ? [] : servers.map((server) => server.id))}>{remoteAllSelected ? ui(locale, "取消全选", "Deselect all") : ui(locale, "全选", "Select all")}</button></div>
           <div className="server-picker-search"><Search size={16} /><input aria-label={ui(locale, "搜索远程执行服务器", "Search servers for remote execution")} placeholder={ui(locale, "搜索服务器", "Search servers")} value={remoteQuery} onChange={(event) => setRemoteQuery(event.target.value)} /></div>
           <div className="server-picker-list">
-            {remoteVisibleServers.map((server) => <label className="server-picker-row" key={server.id}><Checkbox checked={remoteSelectedIds.includes(server.id)} onChange={() => toggleRemoteServer(server.id)} ariaLabel={ui(locale, `选择 ${server.name}`, `Select ${server.name}`)} /><span><strong>{server.name}</strong><small>{server.group_name || "默认"}</small></span></label>)}
+            {remoteVisibleServers.map((server) => {
+              const ip = server.ip_v4 || server.ip_v6 || server.last_ip;
+              return <label className="server-picker-row" key={server.id}><Checkbox checked={remoteSelectedIds.includes(server.id)} onChange={() => toggleRemoteServer(server.id)} ariaLabel={ui(locale, `选择 ${server.name}`, `Select ${server.name}`)} /><span className="remote-server-identity"><strong title={server.name}>{server.name}</strong><small title={ip || undefined}>{ip || ui(locale, "IP 未上报", "IP not reported")}</small></span></label>;
+            })}
             {!remoteVisibleServers.length ? <div className="server-picker-empty">{servers.length ? ui(locale, "没有匹配的服务器", "No matching servers") : ui(locale, "暂无服务器", "No servers yet")}</div> : null}
           </div>
         </div>

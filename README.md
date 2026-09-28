@@ -2,6 +2,10 @@
 
 [NodeFlare](https://github.com/elysia62/NodeFlare) 的公开演示站：看板 + 管理面板，部署在 Cloudflare Workers 上。
 
+演示站用于简单体验看板和管理面板，按需同步上游界面与浏览体验。本次参考上游 `42eff9e`（2026-09-28），更新后台布局和延迟显示，继续使用模拟数据与只读 API，历史范围最多 30 天。
+
+后台演示账号和密码均为 `admin`；可以浏览节点配置，所有数据修改均被拒绝。
+
 ## 技术栈
 
 | 层 | 说明 |
@@ -32,8 +36,7 @@
 ├── shared/               前后端共用（纯函数，不依赖浏览器 API）
 │   ├── types.ts             全部数据接口定义
 │   ├── demo.ts              演示数据源（节点清单、配置、汇率…）
-│   ├── sampling.ts          波形采样：CPU / 内存 / 网速按秒生成
-│   └── password.ts          登录密码 PBKDF2 派生
+│   └── sampling.ts          波形采样：CPU / 内存 / 网速按秒生成
 └── public/               Static Assets（原样发布）
     ├── os-icons/            系统图标
     ├── _redirects           /admin → /admin.html 重写

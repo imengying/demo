@@ -93,7 +93,7 @@ export async function handleApi(request: Request, env: Env, startedAt: number): 
       return json({ servers: serversAt(catalog, now, startedAt).map(demoAdminServer) });
     case "/api/admin/settings": return json(await settingsFor(env, catalog));
     case "/api/admin/themes":
-      return json({ themes: [{ id: catalog.config.active_theme_id, name: "NodeFlare", description: "内置主题", url: "", version: "1.0.0", builtin: true, active: true }] });
+      return json({ themes: [{ id: catalog.config.active_theme_id, name: "NodeFlare", url: "", version: "1.0.0", builtin: true, active: true }] });
     case "/api/admin/theme-settings":
       return json({ schema: 1, source: "builtin", settings: [
         { key: "enableBlur", label: "背景模糊", type: "toggle", default: true },

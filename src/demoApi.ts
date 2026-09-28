@@ -16,7 +16,7 @@ const settings: Settings = {
   traffic_alert_percentage: 80,
 };
 const themes: Theme[] = [{
-  id: demoConfig.active_theme_id, name: "NodeFlare", description: "内置主题", url: "",
+  id: demoConfig.active_theme_id, name: "NodeFlare", url: "",
   version: "1.0.0", builtin: true, active: true,
 }];
 const themeSettings: ThemeSettingsSchema = {
