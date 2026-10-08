@@ -109,7 +109,8 @@ export async function handleApi(request: Request, env: Env, startedAt: number): 
           .map((server) => server.id),
       })) });
     case "/api/admin/alert-rules": return json({ rules: catalog.alert_rules });
-    case "/api/admin/telegram": return json({ telegram: catalog.telegram });
+    case "/api/admin/telegram": return json({ telegram: { ...catalog.telegram, enabled: catalog.telegram.enabled ?? false } });
+    case "/api/admin/webhooks": return json({ webhooks: catalog.webhooks ?? [] });
     case "/api/admin/database": return json(catalog.database);
     case "/api/admin/sessions":
       return json({ sessions: [{

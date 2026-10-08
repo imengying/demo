@@ -39,16 +39,17 @@ export function RemoteTab({ locale, servers, busy, selectTab, createRemoteTask, 
         <label className="remote-command-field">
           <span>{ui(locale, "执行命令", "Command")}</span>
           <textarea autoFocus required rows={5} maxLength={16_384} spellCheck={false} value={remoteCommand} onChange={(event) => setRemoteCommand(event.target.value)} />
-          <small>{ui(locale, "多行内容按一个脚本执行，完成后返回输出，单条命令最长执行 10 分钟；离开页面不会终止命令。", "Multiple lines run as one script and return their output when finished; a command may run up to 10 minutes and keeps running after you leave the page.")}</small>
+          <small>{ui(locale, "多行内容按一个脚本执行，完成后返回输出，单条命令最长执行 10 分钟。离开页面不会终止已下发的命令。", "Multiple lines run as one script; output is returned when finished. A command may run up to 10 minutes. Leaving this page does not stop dispatched commands.")}</small>
         </label>
 
         <div className="server-picker remote-server-picker">
-          <div className="server-picker-head"><strong>{ui(locale, "选择服务器", "Select servers")}</strong><span>{ui(locale, `已选 ${remoteSelectedIds.length} / 共 ${servers.length}`, `Selected ${remoteSelectedIds.length} / ${servers.length}`)}</span><button type="button" onClick={() => setRemoteSelectedIds(remoteAllSelected ? [] : servers.map((server) => server.id))}>{remoteAllSelected ? ui(locale, "取消全选", "Deselect all") : ui(locale, "全选", "Select all")}</button></div>
+          <div className="server-picker-head"><strong>{ui(locale, "选择服务器", "Select servers")}</strong><span>{ui(locale, `已选 ${remoteSelectedIds.length} / 共 ${servers.length}`, `Selected ${remoteSelectedIds.length} / ${servers.length}`)}</span><button type="button" onClick={() => setRemoteSelectedIds(remoteAllSelected ? [] : servers.filter((server) => server.remote_control !== false).map((server) => server.id))}>{remoteAllSelected ? ui(locale, "取消全选", "Deselect all") : ui(locale, "全选", "Select all")}</button></div>
           <div className="server-picker-search"><Search size={16} /><input aria-label={ui(locale, "搜索远程执行服务器", "Search servers for remote execution")} placeholder={ui(locale, "搜索服务器", "Search servers")} value={remoteQuery} onChange={(event) => setRemoteQuery(event.target.value)} /></div>
           <div className="server-picker-list">
             {remoteVisibleServers.map((server) => {
               const ip = server.ip_v4 || server.ip_v6 || server.last_ip;
-              return <label className="server-picker-row" key={server.id}><Checkbox checked={remoteSelectedIds.includes(server.id)} onChange={() => toggleRemoteServer(server.id)} ariaLabel={ui(locale, `选择 ${server.name}`, `Select ${server.name}`)} /><span className="remote-server-identity"><strong title={server.name}>{server.name}</strong><small title={ip || undefined}>{ip || ui(locale, "IP 未上报", "IP not reported")}</small></span></label>;
+              const disabled = server.remote_control === false;
+              return <label className="server-picker-row" key={server.id}><Checkbox checked={!disabled && remoteSelectedIds.includes(server.id)} disabled={disabled} onChange={() => toggleRemoteServer(server.id)} ariaLabel={ui(locale, `选择 ${server.name}`, `Select ${server.name}`)} /><span className="remote-server-identity"><strong title={server.name}>{server.name}</strong><small title={ip || undefined}>{disabled ? ui(locale, "Agent 本地已关闭远程控制", "Remote control disabled locally") : ip || ui(locale, "IP 未上报", "IP not reported")}</small></span></label>;
             })}
             {!remoteVisibleServers.length ? <div className="server-picker-empty">{servers.length ? ui(locale, "没有匹配的服务器", "No matching servers") : ui(locale, "暂无服务器", "No servers yet")}</div> : null}
           </div>
@@ -59,14 +60,14 @@ export function RemoteTab({ locale, servers, busy, selectTab, createRemoteTask, 
 
       {remoteTasks.length > 0 ? <div className="remote-results">
         <div className="section-head"><div><h3>{ui(locale, "执行结果", "Results")}</h3>{remoteTasksActive ? <span className="remote-auto-refresh">{remotePollingUntil ? <RotateCw size={12} /> : null}{remotePollingUntil ? ui(locale, "等待结果，每 2 秒自动刷新", "Waiting for results; auto-refreshing every 2s") : ui(locale, "自动刷新已暂停", "Auto-refresh paused")}</span> : <span>{ui(locale, "本次命令已结束", "This run has finished")}</span>}</div><button type="button" className="secondary-btn compact" disabled={busy} onClick={() => { setRemotePollingUntil(Date.now() + REMOTE_TASK_POLL_TIMEOUT_MS); void refreshRemoteTasks(false, true); }}><RotateCw size={14} />{ui(locale, "刷新结果", "Refresh results")}</button></div>
-        {remoteTasksActive && !remotePollingUntil ? <p className="settings-hint" role="status">{ui(locale, "已等待 1 分钟，命令可能仍在执行；点击“刷新结果”继续查询，暂停刷新不会停止命令。", "Waited 1 minute; the command may still be running. Click \"Refresh results\" to keep polling; pausing does not stop the command.")}</p> : null}
+        {remoteTasksActive && !remotePollingUntil ? <p className="settings-hint" role="status">{ui(locale, `已等待 ${REMOTE_TASK_POLL_TIMEOUT_MS / 60_000} 分钟，尚未收到全部结果。点击“刷新结果”可继续查询，暂停刷新不会停止命令。`, `Waited ${REMOTE_TASK_POLL_TIMEOUT_MS / 60_000} minutes; some results have not arrived. Click "Refresh results" to keep polling; pausing refresh does not stop the command.`)}</p> : null}
         <div className="remote-command-summary"><span>{ui(locale, "本次命令", "Command")}</span><code>{remoteTasks[0]?.command}</code></div>
         <div className="task-list">
           {remoteTasks.map((task) => {
             const server = remoteServerById.get(task.server_id);
             return <div key={task.id} className="task-item remote-result-item">
               <div className="task-header"><strong className="remote-result-server">{server?.name ?? task.server_id}</strong><span className={`task-status ${task.status}`}>{remoteTaskStatusLabels(locale)[task.status]}</span><span className="task-time">{new Date(task.requested_at * 1000).toLocaleString()}</span></div>
-              {task.status === "success" || task.status === "failed" ? <pre className={`task-result ${task.status}`}>{task.result || ui(locale, "（命令没有输出）", "(no output)")}</pre> : <p className="task-progress">{task.status === "pending" ? ui(locale, "等待 Agent 确认接收；断线后不会自动重发。", "Waiting for the agent to acknowledge; commands are not resent after a disconnect.") : ui(locale, "Agent 已接收，正在等待执行结果…", "Received by the agent; waiting for the result…")}</p>}
+              {task.status === "success" || task.status === "failed" ? <pre className={`task-result ${task.status}`}>{task.result || ui(locale, "（命令没有输出）", "(no output)")}</pre> : <p className="task-progress">{task.status === "pending" ? ui(locale, "等待 Agent 确认接收；断线后不会自动重发命令。", "Waiting for the agent to acknowledge; it will not be resent after a disconnect.") : ui(locale, "Agent 已接收，正在等待执行结果…", "Received by the agent; waiting for the result…")}</p>}
             </div>;
           })}
         </div>

@@ -4,7 +4,7 @@
 // 而 CPU/内存/网速这类波形是按秒实时算出来的 —— 把时序样本写进 KV 既没意义
 // （KV 是最终一致的键值存储，不当时间序列用），也会让卡片失去实时感。
 import { demoConfig, demoExchangeRates, demoLatencyTasks, demoServers } from "../shared/demo";
-import type { AlertRule, Config, ExchangeRates, LatencyTestPoint, Server, Settings, TelegramSettings } from "../shared/types";
+import type { AlertRule, Config, ExchangeRates, LatencyTestPoint, Server, Settings, TelegramSettings, WebhookSettingsView } from "../shared/types";
 
 const CATALOG_KEY = "nodeflare:catalog";
 const ADMIN_KEY = "nodeflare:admin";
@@ -21,6 +21,7 @@ export interface Catalog {
   latency_tasks: LatencyTestPoint[];
   alert_rules: AlertRule[];
   telegram: TelegramSettings;
+  webhooks?: WebhookSettingsView[];
   exchange_rates: ExchangeRates;
   settings: Settings;
   database: { kind: string; size_bytes: number; reclaimable_bytes: number; restart_required: boolean };
@@ -42,7 +43,8 @@ function seedCatalog(): Catalog {
       { id: "demo-cpu-alert", name: "CPU 持续高负载", metric: "cpu", threshold: 85, duration_minutes: 5, aggregation: "average", all_servers: true, enabled: true, server_ids: [] },
       { id: "demo-memory-alert", name: "内存使用率过高", metric: "memory", threshold: 90, duration_minutes: 10, aggregation: "continuous", all_servers: true, enabled: true, server_ids: [] },
     ],
-    telegram: { bot_token: "", chat_id: "", message_thread_id: null, template: "NodeFlare 通知\n节点：{{server_name}}\n事件：{{message}}" },
+    telegram: { enabled: false, bot_token: "", chat_id: "", message_thread_id: null, template: "{{title}}\n\n服务器：{{server}}\n{{message}}\n时间：{{time}}" },
+    webhooks: [],
     exchange_rates: demoExchangeRates,
     settings: {
       ...demoConfig,

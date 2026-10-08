@@ -134,6 +134,23 @@
 
 .form-grid { display: grid; gap: 15px; grid-template-columns: 1fr 1fr; }
 .form-grid.three { grid-template-columns: repeat(3, 1fr); }
+.admin-select { display: flex; min-width: 0; flex-direction: column; gap: 6px; }
+.admin-select-trigger { display: flex; width: 100%; min-height: 40px; align-items: center; justify-content: space-between; gap: 8px; border: 1px solid var(--admin-border-strong); border-radius: 6px; padding: 8px 10px; color: var(--admin-text); background: var(--admin-surface); font-size: 14px; text-align: left; }
+.admin-select-trigger > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.admin-select-trigger > svg { flex: 0 0 auto; color: var(--admin-muted); transition: transform .15s ease; }
+.admin-select-trigger[aria-expanded="true"] > svg { transform: rotate(180deg); }
+.admin-select-trigger:focus-visible, .admin-select-trigger[aria-expanded="true"] { outline: none; border-color: var(--admin-accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--admin-accent) 16%, transparent); }
+.admin-select-menu { position: fixed; z-index: 1; overflow-y: auto; overscroll-behavior: contain; max-height: 280px; margin: 0; border: 1px solid var(--admin-border-strong); border-radius: 7px; padding: 4px; color: var(--admin-text); background: var(--admin-surface); box-shadow: 0 8px 24px rgb(15 23 42 / .18); list-style: none; }
+.admin-select-menu > li { display: flex; min-height: 40px; align-items: center; justify-content: space-between; gap: 10px; border-radius: 4px; padding: 8px 10px; cursor: pointer; }
+.admin-select-menu > li[data-active="true"] { background: var(--admin-hover); }
+.admin-select-menu > li[aria-selected="true"] { color: var(--admin-accent); background: var(--admin-active-bg); }
+.admin-select-menu > li > span { display: flex; min-width: 0; flex-direction: column; gap: 2px; font-size: 13px; line-height: 1.4; }
+.admin-select-menu small { color: var(--admin-muted); font-size: 11px; overflow-wrap: anywhere; }
+.admin-select-menu svg { width: 15px; height: 15px; flex: 0 0 auto; opacity: 0; }
+.admin-select-menu [aria-selected="true"] > svg { opacity: 1; }
+.admin-select-menu .admin-select-check { display: inline-flex; width: 18px; height: 18px; flex: 0 0 18px; align-items: center; justify-content: center; border: 1px solid var(--admin-border-strong); border-radius: 4px; background: var(--admin-surface); }
+.admin-select-menu [aria-selected="true"] .admin-select-check { border-color: var(--admin-accent); background: var(--admin-accent); }
+.admin-select-menu [aria-selected="true"] .admin-select-check svg { width: 13px; height: 13px; color: var(--admin-surface); opacity: 1; stroke-width: 3; }
 .settings-toggles { display: grid; gap: 12px; grid-template-columns: 1fr 1fr; }
 .toggle-row { display: flex; min-height: 52px; align-items: center; justify-content: space-between; flex-direction: row; gap: 14px; border: 1px solid var(--admin-border); border-radius: 7px; padding: 9px 12px; background: var(--admin-surface); }
 .toggle-row > span { color: var(--admin-text); }
@@ -143,6 +160,8 @@
 .checkbox-control svg { width: 14px; height: 14px; color: var(--primary-foreground); opacity: 0; pointer-events: none; stroke-width: 3; }
 .checkbox-control:has(input:checked) { border-color: var(--primary); background: var(--primary); }
 .checkbox-control:has(input:checked) svg { opacity: 1; }
+.checkbox-control:has(input:disabled) { opacity: .5; }
+.checkbox-control input:disabled { cursor: not-allowed; }
 .checkbox-control:has(input:focus-visible) { outline: 2px solid color-mix(in srgb, var(--primary) 35%, transparent); outline-offset: 2px; }
 .form-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 2px; }
 .section-title { display: flex; align-items: center; gap: 7px; margin: 1px 0 2px; color: var(--admin-text); font-size: 16px; font-weight: 700; }
@@ -287,22 +306,24 @@
 .alert-server-picker label { display: flex; min-width: 0; align-items: center; gap: 9px; border-bottom: 1px solid var(--admin-border); padding: 10px 11px; }
 .alert-server-picker span:last-child { overflow: hidden; color: var(--admin-text); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
 
-.telegram-settings { display: grid; gap: 15px; border-top: 1px solid var(--admin-border); padding-top: 18px; }
-.telegram-settings-header { display: flex; min-height: 38px; align-items: center; justify-content: space-between; gap: 14px; }
-.telegram-settings-title { display: flex; min-width: 0; align-items: center; gap: 10px; }
-.telegram-settings-title > div { display: flex; min-width: 0; align-items: baseline; flex-wrap: wrap; gap: 8px; }
-.telegram-settings-title h3 { margin: 0; color: var(--admin-text); font-size: 16px; }
-.telegram-mark { display: inline-flex; width: 34px; height: 34px; flex: 0 0 auto; align-items: center; justify-content: center; border-radius: 6px; color: var(--admin-accent); background: var(--admin-active-bg); }
-.telegram-state { display: inline-flex; align-items: center; gap: 4px; color: var(--admin-muted); font-size: 11px; }
-.telegram-state.configured { color: var(--success); }
-.telegram-fields { display: grid; gap: 15px; grid-template-columns: minmax(220px, 1.4fr) minmax(180px, 1fr) minmax(130px, .65fr); }
-.telegram-template textarea { min-height: 116px; resize: vertical; }
-.telegram-actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 8px; }
+.notification-settings { display: grid; gap: 15px; border-top: 1px solid var(--admin-border); padding-top: 18px; }
+.notification-form-fields { display: grid; min-width: 0; gap: 17px; margin: 0; border: 0; padding: 0; }
+.notification-rules .alert-rule-manager { margin: 0; border-top: 0; padding-top: 0; }
+.notification-settings-header { display: flex; min-height: 38px; align-items: center; justify-content: space-between; gap: 14px; }
+.notification-settings-header h3 { margin: 0; color: var(--admin-text); font-size: 15px; }
+.notification-state { display: inline-flex; align-items: center; gap: 4px; color: var(--admin-muted); font-size: 11px; }
+.notification-state.configured { color: var(--success); }
+.notification-fields { display: grid; gap: 15px; grid-template-columns: minmax(220px, 1.4fr) minmax(180px, 1fr) minmax(130px, .65fr); }
+.notification-template textarea { min-height: 116px; resize: vertical; }
+.notification-actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 8px; }
+.webhook-preview { border: 1px solid var(--admin-border); border-radius: 6px; padding: 10px 12px; min-width: 0; }
+.webhook-preview summary { cursor: pointer; color: var(--admin-muted); }
+.webhook-preview pre { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 280px; overflow: auto; font-size: 12px; }
 
 @media (max-width: 960px) {
   .form-grid.three { grid-template-columns: 1fr 1fr; }
-  .telegram-fields { grid-template-columns: 1fr 1fr; }
-  .telegram-token-field { grid-column: 1 / -1; }
+  .notification-fields { grid-template-columns: 1fr 1fr; }
+  .notification-token-field { grid-column: 1 / -1; }
 }
 
 /* 断点顺序必须由宽到窄：760 和 639 都命中窄屏且特异性相同，写在后面的赢。
@@ -347,8 +368,8 @@
   .theme-row-actions { justify-content: flex-start; }
   .usage-table th, .usage-table td { padding-inline: 5px; font-size: 11px; }
   .editor-modal, .install-modal, .latency-editor { padding: 15px 13px; }
-  .telegram-fields { grid-template-columns: 1fr; }
-  .telegram-token-field { grid-column: auto; }
+  .notification-fields { grid-template-columns: 1fr; }
+  .notification-token-field { grid-column: auto; }
   .latency-task-row { padding-block: 8px; grid-template-columns: 70px minmax(0, 1fr) auto; }
   .latency-task-row .latency-task-meta:nth-of-type(2) { display: none; }
   .latency-task-row .latency-task-meta:nth-of-type(3) { grid-column: 2; }
@@ -456,7 +477,7 @@
 .demo-readonly .theme-row-actions button,
 .demo-readonly .theme-add-form button,
 .demo-readonly .settings-form .form-actions button,
-.demo-readonly .telegram-actions button,
+.demo-readonly .notification-actions button,
 .demo-readonly .two-factor-actions button,
 .demo-readonly .login-device-revoke,
 .demo-readonly .database-section-head button,
@@ -470,8 +491,8 @@
 .demo-readonly .settings-form select,
 .demo-readonly .theme-add-form input,
 .demo-readonly .theme-add-form textarea,
-.demo-readonly .telegram-settings input,
-.demo-readonly .telegram-settings textarea,
+.demo-readonly .notification-settings input,
+.demo-readonly .notification-settings textarea,
 .demo-readonly .database-migration input,
 .demo-readonly .remote-execution-form textarea,
 .demo-readonly .remote-server-picker .checkbox-control input,

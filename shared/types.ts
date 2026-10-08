@@ -202,11 +202,14 @@ export interface Server extends ServerSummary {
 }
 
 export interface AdminServer extends ServerSummary {
+  remote_control: boolean | null;
+  agent_remote_control: boolean;
   hidden: boolean;
   last_ip: string;
   ip_v4: string;
   ip_v6: string;
   network_interface: string;
+  reset_timezone: string;
   report_interval: number;
   collect_interval: number;
   rx_correction: number;
@@ -264,10 +267,12 @@ export interface ServerInput {
   network_interface: string;
   reset_day: number;
   report_interval: number;
+  reset_timezone: string;
   collect_interval: number;
   rx_correction: number;
   tx_correction: number;
   agent_mirror: string;
+  agent_remote_control: boolean;
   offline_notify_disabled: boolean;
   auto_update: boolean;
 }
@@ -288,13 +293,33 @@ export interface Settings extends Config {
 }
 
 export interface TelegramSettings {
+  enabled: boolean;
   bot_token: string;
   chat_id: string;
   message_thread_id: number | null;
   template: string;
 }
 
-export type TelegramSettingsInput = Pick<TelegramSettings, "bot_token" | "chat_id" | "message_thread_id" | "template">;
+export type TelegramSettingsInput = TelegramSettings;
+
+export type WebhookPreset = "custom" | "bark" | "discord" | "slack" | "wecom" | "dingtalk" | "feishu" | "ntfy" | "gotify";
+
+export interface WebhookSettingsInput {
+  enabled: boolean;
+  preset: WebhookPreset;
+  url: string;
+  headers: string;
+  body: string;
+  clear_headers: boolean;
+}
+
+export interface WebhookSettingsView {
+  enabled: boolean;
+  preset: WebhookPreset;
+  url_configured: boolean;
+  headers_configured: boolean;
+  body_configured: boolean;
+}
 
 type AlertMetric = "cpu" | "memory" | "disk" | "net_in" | "net_out";
 type AlertAggregation = "average" | "continuous";

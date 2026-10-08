@@ -34,8 +34,8 @@ const rules: AlertRule[] = [{
   duration_minutes: 10, aggregation: "continuous", all_servers: true, enabled: true, server_ids: [],
 }];
 const telegram: TelegramSettings = {
-  bot_token: "", chat_id: "", message_thread_id: null,
-  template: "NodeFlare 通知\n节点：{{server_name}}\n事件：{{message}}",
+  enabled: false, bot_token: "", chat_id: "", message_thread_id: null,
+  template: "{{title}}\n\n服务器：{{server}}\n{{message}}\n时间：{{time}}",
 };
 const database: DatabaseStats = {
   kind: "sqlite", size_bytes: 48 * 1024 ** 2, reclaimable_bytes: 3 * 1024 ** 2, restart_required: false,
@@ -94,6 +94,7 @@ export function createDemoRequest(store?: SessionStore) {
       })) });
       case "/api/admin/alert-rules": return Response.json({ rules });
       case "/api/admin/telegram": return Response.json({ telegram });
+      case "/api/admin/webhooks": return Response.json({ webhooks: [] });
       case "/api/admin/database": return Response.json(database);
       case "/api/admin/sessions": {
         const now = Math.floor(Date.now() / 1000);

@@ -56,6 +56,7 @@ describe("demo admin session", () => {
       "/api/admin/latency-tasks",
       "/api/admin/alert-rules",
       "/api/admin/telegram",
+      "/api/admin/webhooks",
       "/api/admin/database",
       "/api/admin/sessions",
     ]) {
@@ -65,6 +66,42 @@ describe("demo admin session", () => {
     expect(servers.length).toBeGreaterThan(0);
     const history = await request(`/api/history/${servers[0].id}?hours=1`);
     expect((await history.json()).points.length).toBeGreaterThan(0);
+  });
+
+  test("notification channels are readable but cannot send, save or delete anything", async () => {
+    const request = createDemoRequest(memoryStore());
+    expect((await request("/api/admin/webhooks")).status).toBe(401);
+    await post(request, "/api/admin/login", { username: "admin", password: "admin" });
+    expect(await (await request("/api/admin/webhooks")).json()).toEqual({ webhooks: [] });
+    const telegram = (await (await request("/api/admin/telegram")).json()).telegram;
+    expect(telegram.enabled).toBe(false);
+    for (const [path, method] of [
+      ["/api/admin/telegram", "PUT"],
+      ["/api/admin/telegram/test", "POST"],
+      ["/api/admin/webhooks", "PUT"],
+      ["/api/admin/webhooks/bark/test", "POST"],
+      ["/api/admin/webhooks/discord", "DELETE"],
+    ]) {
+      const response = await request(path, { method, body: "{}" });
+      expect(response.status).toBe(403);
+      expect(await response.json()).toEqual({ error: "演示环境不支持修改。" });
+    }
+    expect(await (await request("/api/admin/webhooks")).json()).toEqual({ webhooks: [] });
+  });
+
+  test("node settings include UTC and disabled local remote control without an actual Agent", async () => {
+    const request = createDemoRequest(memoryStore());
+    await post(request, "/api/admin/login", { username: "admin", password: "admin" });
+    const { servers } = await (await request("/api/admin/servers")).json();
+    for (const server of servers) {
+      expect(server.reset_timezone).toBe("UTC");
+      expect(server.agent_remote_control).toBe(false);
+      expect(server.remote_control).toBeNull();
+      expect(server.collect_interval).toBe(3);
+    }
+    expect((await request(`/api/admin/servers/${servers[0].id}`, {
+      method: "PATCH", body: JSON.stringify({ agent_remote_control: true }),
+    })).status).toBe(403);
   });
 });
 

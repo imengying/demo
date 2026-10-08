@@ -1,4 +1,4 @@
-import type { AdminServer, AlertRule, AlertRuleInput, Bootstrap, DatabaseMigrationResult, DatabaseStats, ExchangeRates, HistoryPoint, LatencySample, LatencyTask, LatencyTaskInput, LatencyTestPoint, LoginSession, RemoteTask, RemoteTaskCreated, RemoteTaskInput, ServerInput, Settings, TelegramSettings, TelegramSettingsInput, Theme, ThemeSettingsSchema, TotpSetup, TotpStatus } from "../shared/types";
+import type { AdminServer, AlertRule, AlertRuleInput, Bootstrap, DatabaseMigrationResult, DatabaseStats, ExchangeRates, HistoryPoint, LatencySample, LatencyTask, LatencyTaskInput, LatencyTestPoint, LoginSession, RemoteTask, RemoteTaskCreated, RemoteTaskInput, ServerInput, Settings, TelegramSettings, TelegramSettingsInput, Theme, ThemeSettingsSchema, TotpSetup, TotpStatus, WebhookSettingsInput, WebhookSettingsView } from "../shared/types";
 
 export const ADMIN_UNAUTHORIZED_EVENT = "nodeflare:admin-unauthorized";
 
@@ -126,6 +126,11 @@ export const api = {
   saveTelegramSettings: (input: TelegramSettingsInput) =>
     request<void>("/api/admin/telegram", { method: "PUT", body: JSON.stringify(input) }, true),
   testTelegram: () => request<void>("/api/admin/telegram/test", { method: "POST" }, true),
+  webhookSettings: () => request<{ webhooks: WebhookSettingsView[] }>("/api/admin/webhooks", {}, true),
+  saveWebhookSettings: (input: WebhookSettingsInput) =>
+    request<WebhookSettingsView>("/api/admin/webhooks", { method: "PUT", body: JSON.stringify(input) }, true),
+  testWebhook: (preset: WebhookSettingsInput["preset"]) => request<void>(`/api/admin/webhooks/${preset}/test`, { method: "POST" }, true),
+  clearWebhookSettings: (preset: WebhookSettingsInput["preset"]) => request<void>(`/api/admin/webhooks/${preset}`, { method: "DELETE" }, true),
   themeSettings: () => request<ThemeSettingsSchema>("/api/admin/theme-settings", {}, true),
   themes: () => request<{ themes: Theme[] }>("/api/admin/themes", {}, true),
   addTheme: (input: Pick<Theme, "name" | "url">) =>

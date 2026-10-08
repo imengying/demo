@@ -82,11 +82,14 @@ export function sampleServer(server: Server, at: number, startedAt: number): Ser
 export function demoAdminServer(server: Server, index: number): AdminServer {
   return {
     ...server,
+    remote_control: null,
+    agent_remote_control: false,
     hidden: false,
     last_ip: `192.0.2.${index + 10}`,
     ip_v4: `192.0.2.${index + 10}`,
     ip_v6: `2001:db8::${index + 10}`,
     network_interface: "eth0",
+    reset_timezone: "UTC",
     report_interval: 60,
     collect_interval: 3,
     rx_correction: 0,
