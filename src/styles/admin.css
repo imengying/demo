@@ -27,11 +27,15 @@
   --admin-warning-bg: #fef3c7;
   --admin-danger: #b91c1c;
   --admin-danger-bg: #fee2e2;
-  /* 实心 danger 按钮上的文字色。浅色用白（--danger #c9293a 上 5.44:1），深色用近黑
-     （--danger #fb7185 浅红上 7.04:1；若沿用白字仅 2.69:1，不达 AA）。 */
+  /* 实心 danger 按钮 hover 态的文字色。注意 .danger-btn:hover 的实心底用的是
+     base.css 的 --danger（浅色 #c9293a / 深色 #fb7185），不是上面的 --admin-danger：
+     白字在 #c9293a 上 5.44:1，近黑字在 #fb7185 上 7.04:1，均过 AA；若深色沿用
+     白字仅 2.69:1 不达标。语义上等价于 base.css 的 --primary-foreground
+     （admin.css 首行 @import base.css，该变量本可用），独立定义只是让本文件的
+     配色意图自洽、不依赖外部命名。 */
   --admin-on-accent: #fff;
-  /* Radius scale shared with the dashboard (base.css defines the same names);
-     redeclared here because admin.css loads standalone in the admin bundle. */
+  /* Radius scale。base.css 经首行 @import 已带入同名变量，此处取值保持一致即可；
+     重复声明只是让后台的圆角档位数一眼可见，并非必需。 */
   --radius-sm: 6px;
   --radius-md: 8px;
   --radius-lg: 12px;
