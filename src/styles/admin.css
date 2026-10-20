@@ -27,6 +27,9 @@
   --admin-warning-bg: #fef3c7;
   --admin-danger: #b91c1c;
   --admin-danger-bg: #fee2e2;
+  /* 实心 danger 按钮上的文字色。浅色用白（--danger #c9293a 上 5.44:1），深色用近黑
+     （--danger #fb7185 浅红上 7.04:1；若沿用白字仅 2.69:1，不达 AA）。 */
+  --admin-on-accent: #fff;
   /* Radius scale shared with the dashboard (base.css defines the same names);
      redeclared here because admin.css loads standalone in the admin bundle. */
   --radius-sm: 6px;
@@ -51,6 +54,7 @@
   --admin-warning-bg: #451a03;
   --admin-danger: #f87171;
   --admin-danger-bg: #450a0a;
+  --admin-on-accent: #07130f;
   color-scheme: dark;
 }
 
@@ -68,11 +72,8 @@
 .admin-page .secondary-btn { border-color: var(--admin-border-strong); color: var(--admin-text); background: var(--admin-surface); }
 .danger-btn { display: inline-flex; min-height: 36px; align-items: center; justify-content: center; gap: 7px; border: 1px solid color-mix(in srgb, var(--danger) 35%, var(--border)); border-radius: var(--radius-md); padding: 7px 13px; color: var(--danger); background: color-mix(in srgb, var(--danger) 7%, transparent); font-size: 13px; font-weight: 650; }
 .danger-btn.compact { min-height: 30px; padding: 4px 9px; font-size: 11px; }
-/* 平时低调（描边+淡底）降低误点冲动，悬停才实心确认破坏性操作。
-   字色用 --primary-foreground 而不是写死 #fff：深色主题 --danger 是浅红
-   #fb7185，白字只有 2.69:1，而 --primary-foreground 在这套配色里两主题都达标
-   （浅色 5.44:1、深色 7.04:1）。 */
-.danger-btn:hover:not(:disabled) { border-color: var(--danger); color: var(--primary-foreground); background: var(--danger); }
+/* 平时低调（描边+淡底）降低误点冲动，悬停才实心确认破坏性操作 */
+.danger-btn:hover:not(:disabled) { border-color: var(--danger); color: var(--admin-on-accent); background: var(--danger); }
 
 .admin-loading { display: grid; min-height: 100dvh; place-items: center; color: var(--admin-text); background: var(--admin-bg); font-size: 14px; }
 .admin-login-stage { position: relative; display: grid; min-height: 100dvh; place-items: center; background: var(--admin-bg); }
