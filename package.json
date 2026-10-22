@@ -2,7 +2,7 @@
   "name": "nodeflare-demo",
   "version": "1.0.0",
   "private": true,
-  "packageManager": "bun@1.4.2",
+  "packageManager": "bun@1.4.4",
   "repository": "https://github.com/elysia62/NodeFlare",
   "type": "module",
   "scripts": {
@@ -15,7 +15,7 @@
     "check": "wrangler deploy --dry-run"
   },
   "dependencies": {
-    "lucide-react": "^1.59.0",
+    "lucide-react": "^1.61.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "recharts": "^3.10.1"
@@ -26,7 +26,7 @@
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.2",
     "typescript": "^7.0.2",
-    "vite": "^8.3.4",
-    "wrangler": "^4.151.2"
+    "vite": "^8.3.5",
+    "wrangler": "^4.151.3"
   }
 }

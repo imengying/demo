@@ -47,7 +47,7 @@
 
 ## 本地开发
 
-使用 Bun **1.4.2**（与 `package.json` 中的 `packageManager` 保持一致）。
+使用 Bun **1.4.4**（与 `package.json` 中的 `packageManager` 保持一致）。
 
 ```bash
 bun install --frozen-lockfile
@@ -72,7 +72,7 @@ bun run preview      # wrangler dev，含 KV、WebSocket，最接近线上
 | 根目录 | `/` |
 | 构建命令 | `bun run build` |
 | 部署命令 | `bunx wrangler deploy` |
-| 构建变量 `BUN_VERSION` | `1.4.2` |
+| 构建变量 `BUN_VERSION` | `1.4.4` |
 
 `BUN_VERSION` 需要添加到 **设置 → 构建 → 构建变量和机密**
 （Settings → Build → Build Variables and Secrets），保存后重新部署。
