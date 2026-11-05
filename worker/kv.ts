@@ -3,7 +3,7 @@
 // 说明：KV 存的是**目录数据**（配置、节点清单、延迟任务、告警规则、账号凭据、会话），
 // 而 CPU/内存/网速这类波形是按秒实时算出来的 —— 把时序样本写进 KV 既没意义
 // （KV 是最终一致的键值存储，不当时间序列用），也会让卡片失去实时感。
-import { demoConfig, demoExchangeRates, demoLatencyTasks, demoServers } from "../shared/demo";
+import { demoConfig, demoExchangeRates, demoLatencyTasks, demoServers, withDemoCarrierLatency } from "../shared/demo";
 import type { AlertRule, Config, ExchangeRates, LatencyTestPoint, Server, Settings, TelegramSettings, WebhookSettingsView } from "../shared/types";
 
 const CATALOG_KEY = "nodeflare:catalog";
@@ -64,7 +64,24 @@ function seedCatalog(): Catalog {
 /** 读取目录；首次访问时用默认值播种，之后可以直接在 Cloudflare 控制台里改 KV。 */
 export async function loadCatalog(env: Env): Promise<Catalog> {
   const cached = (await env.KV.get(CATALOG_KEY, "json")) as Catalog | null;
-  if (cached) return cached;
+  if (cached) {
+    // 旧 KV 不会重新播种：读取时补齐三网默认值和样例，保留自定义设置。
+    const tasks = new Map(cached.latency_tasks.map((task) => [task.id, task]));
+    for (const task of demoLatencyTasks) tasks.set(task.id, task);
+    return {
+      ...cached,
+      config: {
+        ...cached.config,
+        theme_options: { ...demoConfig.theme_options, ...cached.config.theme_options },
+      },
+      settings: {
+        ...cached.settings,
+        theme_options: { ...demoConfig.theme_options, ...cached.settings.theme_options },
+      },
+      latency_tasks: [...tasks.values()],
+      servers: cached.servers.map(withDemoCarrierLatency),
+    };
+  }
   const seed = seedCatalog();
   await env.KV.put(CATALOG_KEY, JSON.stringify(seed));
   return seed;

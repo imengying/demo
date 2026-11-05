@@ -1,7 +1,9 @@
 import { describe, expect, test } from "bun:test";
 import { createDemoRequest } from "./demoApi";
-import { demoDraftServer, demoHistory, demoServersAt } from "../shared/demo";
+import { demoConfig, demoDraftServer, demoHistory, demoLatencyHistory, demoLatencyTasks, demoServersAt, withDemoCarrierLatency } from "../shared/demo";
 import { OFFLINE_SERVER_ID } from "../shared/sampling";
+import { selectCarrierTasks } from "./latency";
+import { carrierSelection } from "./theme";
 
 // A storage stub matching the Pick<Storage> surface the demo request accepts.
 function memoryStore() {
@@ -110,6 +112,38 @@ describe("demo admin session", () => {
 });
 
 describe("demo live waveform", () => {
+  test("shows all three carriers by default with current and historical data for every node", () => {
+    expect(demoConfig.theme_options.showCarrierLatency).toBe(true);
+    const at = 1_800_000_000;
+    for (const server of demoServersAt(at)) {
+      const selected = selectCarrierTasks(server.latency.map((point) => ({ id: point.task_id, name: point.name })), carrierSelection(demoConfig));
+      expect([...selected.keys()]).toEqual(["telecom", "unicom", "mobile"]);
+      const history = demoLatencyHistory(server.id, 1, at);
+      for (const task of selected.values()) {
+        expect(demoLatencyTasks.some((entry) => entry.id === task.id && entry.name === task.name)).toBe(true);
+        const samples = history.filter((point) => point.task_id === task.id);
+        expect(samples.length).toBeGreaterThan(1);
+        expect(samples.every((point) => Number.isFinite(point.latency_ms) && point.latency_ms > 0
+          && Number.isFinite(point.packet_loss) && point.packet_loss >= 0 && point.packet_loss <= 100)).toBe(true);
+      }
+    }
+  });
+
+  test("fills missing carrier samples in old catalogs while preserving measurements and custom tasks", () => {
+    const server = demoServersAt(1_800_000_000)[0];
+    const legacy = { ...server.latency[0], name: "香港 TCP", latency_ms: 27.5, packet_loss: 0.3 };
+    const custom = { ...legacy, task_id: "custom", name: "自定义线路" };
+    const old = { ...server, latency: [legacy, custom] };
+    const upgraded = withDemoCarrierLatency(old);
+    expect(upgraded.latency.find((point) => point.task_id === legacy.task_id)).toMatchObject({
+      name: "电信", timestamp: legacy.timestamp, latency_ms: 27.5, packet_loss: 0.3,
+    });
+    expect(upgraded.latency).toContainEqual(custom);
+    expect(selectCarrierTasks(upgraded.latency.map((point) => ({ id: point.task_id, name: point.name })), carrierSelection(demoConfig)).size).toBe(3);
+    expect(withDemoCarrierLatency(upgraded)).toEqual(upgraded);
+    expect(old.latency).toEqual([legacy, custom]);
+  });
+
   test("cycles metric values over the shared period and stays bounded", () => {
     const samples = [0, 60, 119].map((offset) => demoServersAt(1_800_000_000 + offset));
     const online = samples[0].filter((server) => server.id !== OFFLINE_SERVER_ID);

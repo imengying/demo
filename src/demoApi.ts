@@ -24,7 +24,7 @@ const themeSettings: ThemeSettingsSchema = {
   schema: 1, source: "builtin",
   settings: [
     { key: "enableBlur", label: "背景模糊", type: "toggle", default: true },
-    { key: "showCarrierLatency", label: "分线路延迟", type: "toggle", default: false },
+    { key: "showCarrierLatency", label: "分线路延迟", type: "toggle", default: true },
   ],
 };
 const rules: AlertRule[] = [{

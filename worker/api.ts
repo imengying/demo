@@ -99,7 +99,7 @@ export async function handleApi(request: Request, env: Env, startedAt: number): 
     case "/api/admin/theme-settings":
       return json({ schema: 1, source: "builtin", settings: [
         { key: "enableBlur", label: "背景模糊", type: "toggle", default: true },
-        { key: "showCarrierLatency", label: "分线路延迟", type: "toggle", default: false },
+        { key: "showCarrierLatency", label: "分线路延迟", type: "toggle", default: true },
       ] });
     case "/api/admin/2fa/status": return json({ enabled: false, has_secret: false });
     case "/api/admin/latency-tasks":

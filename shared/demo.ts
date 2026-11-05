@@ -14,7 +14,7 @@ export const demoConfig: Config = {
   default_theme: "system",
   active_theme_id: "builtin-nodeflare-glass",
   background_url: "",
-  theme_options: {},
+  theme_options: { showCarrierLatency: true },
   show_search: true,
   show_groups: true,
   show_stats: true,
@@ -70,11 +70,11 @@ const EXPIRES = {
 const GB = 1024 ** 3;
 const TB = 1024 ** 4;
 
-// 延迟任务：探测目标按服务商命名，方便对照。
+// 三网任务仅供展示，不发送探测请求；保留旧 ID 以兼容已有 KV 目录。
 export const demoLatencyTasks: LatencyTestPoint[] = [
-  { id: "ct-hk", name: "香港 TCP", task_type: "tcp", target: "hk-cn.aliyuncs.com", port: 443, interval_seconds: 60 },
-  { id: "ct-tokyo", name: "东京 ICMP", task_type: "icmp", target: "ap-northeast-1.amazonaws.com", port: null, interval_seconds: 60 },
-  { id: "ct-sg", name: "新加坡 TCP", task_type: "tcp", target: "asia-southeast1.gcp.cloud", port: 443, interval_seconds: 60 },
+  { id: "ct-hk", name: "电信", task_type: "tcp", target: "telecom.example.com", port: 443, interval_seconds: 60 },
+  { id: "ct-tokyo", name: "联通", task_type: "icmp", target: "unicom.example.com", port: null, interval_seconds: 60 },
+  { id: "ct-sg", name: "移动", task_type: "tcp", target: "mobile.example.com", port: 443, interval_seconds: 60 },
 ];
 
 /**
@@ -106,6 +106,21 @@ function demoLatestLatency(region: string, serverId: string): LatencySample[] {
     latency_ms: Math.round((profile.base + index * 3) * 10) / 10,
     packet_loss: index === 1 ? profile.loss : 0,
   }));
+}
+
+/** 补齐旧目录缺失的三网样例，并让已保存样例的名称与任务定义一致。 */
+export function withDemoCarrierLatency(server: Server): Server {
+  const samples = new Map(server.latency.map((point) => [point.task_id, point]));
+  for (const sample of demoLatestLatency(server.region, server.id)) {
+    const previous = samples.get(sample.task_id);
+    samples.set(sample.task_id, {
+      ...sample,
+      timestamp: previous?.timestamp ?? sample.timestamp,
+      latency_ms: previous?.latency_ms ?? sample.latency_ms,
+      packet_loss: previous?.packet_loss ?? sample.packet_loss,
+    });
+  }
+  return { ...server, latency: [...samples.values()] };
 }
 
 const baseServer: Server = {
