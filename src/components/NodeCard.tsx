@@ -13,6 +13,7 @@ import {
   formatExpire,
   formatPrice,
   remainingAssetValue,
+  formatLastSeen,
   formatSpeed,
   isOnline,
   number,
@@ -101,7 +102,7 @@ export const NodeCard = memo(function NodeCard({ server, config, liveLatencyResu
   liveConnected: boolean;
   onOpen: (server: Server) => void;
 }) {
-  const threshold = config.offline_threshold_seconds;
+  const threshold = server.offline_after_seconds ?? config.offline_threshold_seconds;
   const online = isOnline(server, threshold);
   const cpuCores = Math.max(0, Math.trunc(number(server.cpu_cores)));
   const memory = percent(server.mem_used, server.mem_total);
@@ -114,7 +115,6 @@ export const NodeCard = memo(function NodeCard({ server, config, liveLatencyResu
   const price = formatPrice(server, locale);
   const remainingValue = remainingAssetValue(server.price, server.billing_cycle, server.expires_at);
   const showExpiryPanel = config.show_expiry || config.show_price;
-  const lastUpdated = new Date(number(server.timestamp) * 1000).toLocaleString(locale, { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false });
 
   return (
     <button className={`node-card glass-panel ${online ? "" : "offline"}`} onClick={() => onOpen(server)} type="button" aria-label={ui(locale, `${server.name}，${online ? "在线" : "离线"}，查看详情`, `${server.name}, ${online ? "online" : "offline"}, view details`)}>
@@ -165,11 +165,9 @@ export const NodeCard = memo(function NodeCard({ server, config, liveLatencyResu
           </>}
         </div> : null}
 
-        {!online ? <div className="node-offline-overlay" aria-hidden="true">
+        {!online ? <div className="node-offline-note">
           <span>{ui(locale, "离线", "Offline")}</span>
-          <small>{server.timestamp
-            ? ui(locale, `最后更新 ${lastUpdated}`, `Last update ${lastUpdated}`)
-            : ui(locale, "暂无更新时间", "No update yet")}</small>
+          <small>{ui(locale, `最后在线 ${formatLastSeen(server.timestamp, locale)}`, `Last seen ${formatLastSeen(server.timestamp, locale)}`)}</small>
         </div> : null}
       </div>
     </button>

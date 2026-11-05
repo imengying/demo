@@ -125,7 +125,7 @@ function DetailView() {
           key={selected.id}
           server={selected}
           liveLatencyResults={liveMetrics[selected.id]?.latencyResults}
-          threshold={config.offline_threshold_seconds}
+          threshold={selected.offline_after_seconds ?? config.offline_threshold_seconds}
           retentionDays={config.history_retention_days}
           locale={locale}
           demo={!backendLive}

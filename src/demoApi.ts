@@ -11,6 +11,7 @@ const settings: Settings = {
   admin_password_configured: true,
   turnstile_secret_key: "",
   notification_enabled: true,
+  notification_timezone: "UTC",
   offline_alert_minutes: 5,
   expiry_alert_days: 7,
   traffic_alert_percentage: 80,

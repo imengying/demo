@@ -19,7 +19,7 @@ export function StatsBar({ servers, config, exchangeRates }: { servers: Server[]
   const displayCurrency = assetCurrency(config);
   const locale = config.locale;
   const showOnline = themeToggle(config, "showOnline");
-  const onlineServers = servers.filter((server) => isOnline(server, config.offline_threshold_seconds));
+  const onlineServers = servers.filter((server) => isOnline(server, server.offline_after_seconds ?? config.offline_threshold_seconds));
   const trafficUp = servers.reduce((sum, server) => sum + number(server.net_tx_total), 0);
   const trafficDown = servers.reduce((sum, server) => sum + number(server.net_rx_total), 0);
   const speedUp = onlineServers.reduce((sum, server) => sum + number(server.net_out), 0);

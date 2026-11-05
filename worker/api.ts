@@ -31,6 +31,8 @@ async function settingsFor(env: Env, catalog: Catalog): Promise<Settings> {
   // 凭据只读：这里只回报“存在且用户名是什么”，不泄露任何派生值或盐以外的信息。
   return {
     ...catalog.settings,
+    // 已播种的 KV 目录可能早于通知时区字段，读取时补齐即可。
+    notification_timezone: catalog.settings.notification_timezone ?? "UTC",
     admin_username: admin.username,
     admin_password_configured: true,
   };

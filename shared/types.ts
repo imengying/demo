@@ -196,6 +196,8 @@ interface ServerSummary {
 }
 
 export interface Server extends ServerSummary {
+  /** 该节点实际生效的离线判定窗口（秒）。 */
+  offline_after_seconds?: number;
   disks: DiskMetric[];
   gpus: GpuMetric[];
   latency: LatencySample[];
@@ -287,6 +289,7 @@ export interface Settings extends Config {
   current_totp_code?: string;
   turnstile_secret_key: string;
   notification_enabled: boolean;
+  notification_timezone: string;
   offline_alert_minutes: number;
   expiry_alert_days: number;
   traffic_alert_percentage: number;

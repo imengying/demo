@@ -324,6 +324,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener("popstate", onPop);
   }, []);
 
+  // Worker 的详情页只订阅一个节点，返回看板时刷新其余节点的快照。
+  const previousSelectedRef = useRef<string | null>(routeServerId());
+  useEffect(() => {
+    const wasDetail = previousSelectedRef.current !== null;
+    previousSelectedRef.current = selectedId;
+    if (wasDetail && selectedId === null && access === "ok" && backendLive) {
+      void reload(true);
+    }
+  }, [access, backendLive, reload, selectedId]);
+
   // Merge live metrics into servers with identity preservation: a server's object
   // only changes when its own data or online status changes, and the array itself
   // stays referentially stable on quiet ticks. Memoized cards then skip re-renders
@@ -335,7 +345,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const next = servers.map((server) => {
       const live = liveMetrics[server.id];
       const merged = mergeServerLive(server, live);
-      const online = isOnline(merged, config.offline_threshold_seconds, nowSec);
+      const online = isOnline(merged, server.offline_after_seconds ?? config.offline_threshold_seconds, nowSec);
       const cached = cache.get(server.id);
       if (cached && cached.server === server && cached.live === live) {
         if (cached.online === online) return cached.result;

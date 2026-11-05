@@ -114,18 +114,19 @@ export function AdminPanel({
     setBusy(true);
     setError("");
     try {
-      const [serverResult, settingsResult, themesResult, twoFactorResult] = await Promise.all([
+      // 先检查登录状态，避免未登录时多个请求同时返回 401。
+      const twoFactorResult = await api.twoFactorStatus();
+      setTwoFactorStatus(twoFactorResult);
+      const [serverResult, settingsResult, themesResult] = await Promise.all([
         api.adminServers(),
         api.settings(),
         api.themes(),
-        api.twoFactorStatus(),
       ]);
       setServers(serverResult.servers);
       const serverIds = new Set(serverResult.servers.filter((server) => server.remote_control !== false).map((server) => server.id));
       setRemoteSelectedIds((current) => current.filter((id) => serverIds.has(id)));
       setThemes(themesResult.themes);
       setSettings(settingsResult);
-      setTwoFactorStatus(twoFactorResult);
       setAuthenticated(true);
     } catch (reason) {
       if (reason instanceof ApiError && reason.status === 401) {

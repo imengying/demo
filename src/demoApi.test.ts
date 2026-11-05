@@ -35,9 +35,13 @@ describe("demo admin session", () => {
     await post(request, "/api/admin/login", { username: "admin", password: "admin" });
     const settings = await request("/api/admin/settings");
     expect(settings.status).toBe(200);
-    expect((await settings.json()).admin_username).toBe("admin");
+    expect(await settings.json()).toMatchObject({ admin_username: "admin", notification_timezone: "UTC" });
 
     expect((await request("/api/admin/settings", { method: "PATCH", body: "{}" })).status).toBe(403);
+    expect((await request("/api/admin/settings", {
+      method: "PATCH", body: JSON.stringify({ notification_timezone: "Asia/Shanghai" }),
+    })).status).toBe(403);
+    expect((await (await request("/api/admin/settings")).json()).notification_timezone).toBe("UTC");
     expect((await post(request, "/api/admin/servers", { name: "x" })).status).toBe(403);
 
     await post(request, "/api/admin/logout", {});

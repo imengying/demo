@@ -6,7 +6,9 @@ import { NOTIFICATION_CHANNELS, notificationDraft, notificationUpdates, webhookD
 import type { AdminServer, Settings, WebhookPreset, WebhookSettingsView } from "../../shared/types";
 import { WEBHOOK_PRESETS, WEBHOOK_PREVIEW_VALUES, renderWebhookBody } from "../webhook";
 import { AlertRuleManager } from "./AlertRuleManager";
+import { PasswordInput } from "./PasswordInput";
 import { Select } from "./admin/Select";
+import { trafficTimezones } from "./admin/shared";
 
 const emptySaved: SavedNotificationChannels = { telegram: null, webhooks: [] };
 
@@ -86,6 +88,7 @@ export function NotificationSettings({ locale, settings, servers, updateSettings
       if (failures.length) throw new Error(`${ui(locale, "通知设置未全部保存，请重试。", "Notification settings were not fully saved; retry.")} ${failures.join("；")}`);
       const result = await api.saveSettings({
         notification_enabled: channels.length > 0,
+        notification_timezone: settings.notification_timezone,
         offline_alert_minutes: settings.offline_alert_minutes,
         expiry_alert_days: settings.expiry_alert_days,
         traffic_alert_percentage: settings.traffic_alert_percentage,
@@ -116,14 +119,20 @@ export function NotificationSettings({ locale, settings, servers, updateSettings
       <div className="section-title"><Bell size={15} />{ui(locale, "通知", "Notifications")}</div>
       {loading ? <p className="settings-hint" role="status">{ui(locale, "正在读取通知配置…", "Loading notification settings…")}</p> : !saved ? <button type="button" className="secondary-btn" onClick={() => setReload((value) => value + 1)}><RotateCw size={15} />{ui(locale, "重新读取通知配置", "Reload notification settings")}</button> : null}
       <fieldset className="notification-form-fields" disabled={locked}>
-        <Select multiple label={ui(locale, "启用通知渠道", "Enabled notification channels")}
-          value={channels} onChange={(value) => setDraft((current) => ({ ...current, channels: value as NotificationChannel[] }))}
-          placeholder={ui(locale, "未启用通知渠道", "No notification channels enabled")} disabled={locked}
-          options={NOTIFICATION_CHANNELS.map((channel) => ({
-            value: channel, label: channelName(channel, locale),
-            description: (channel === "telegram" ? saved?.telegram : saved?.webhooks.some((item) => item.preset === channel))
-              ? ui(locale, "已配置", "Configured") : ui(locale, "未配置", "Not configured"),
-          }))} />
+        <div className="notification-channel-row">
+          <Select multiple label={ui(locale, "启用通知渠道", "Enabled notification channels")}
+            value={channels} onChange={(value) => setDraft((current) => ({ ...current, channels: value as NotificationChannel[] }))}
+            placeholder={ui(locale, "未启用通知渠道", "No notification channels enabled")} disabled={locked}
+            options={NOTIFICATION_CHANNELS.map((channel) => ({
+              value: channel, label: channelName(channel, locale),
+              description: (channel === "telegram" ? saved?.telegram : saved?.webhooks.some((item) => item.preset === channel))
+                ? ui(locale, "已配置", "Configured") : ui(locale, "未配置", "Not configured"),
+            }))} />
+          <Select label={ui(locale, "通知时区", "Notification timezone")}
+            value={settings.notification_timezone} disabled={locked}
+            onChange={(value) => updateSettings("notification_timezone", value)}
+            options={trafficTimezones(locale, settings.notification_timezone)} />
+        </div>
         <div className="form-grid three">
           <label><span>{ui(locale, "离线告警延迟（分钟）", "Offline alert delay (min)")}</span><input type="number" required min="2" max="1440" value={settings.offline_alert_minutes} onChange={(event) => updateSettings("offline_alert_minutes", Number(event.target.value))} /></label>
           <label><span>{ui(locale, "到期提醒（天）", "Expiry reminder (days)")}</span><input type="number" required min="0" max="365" value={settings.expiry_alert_days} onChange={(event) => updateSettings("expiry_alert_days", Number(event.target.value))} /></label>
@@ -134,8 +143,8 @@ export function NotificationSettings({ locale, settings, servers, updateSettings
         {channels.includes("telegram") ? <section className="notification-settings" data-channel="telegram" aria-labelledby="telegram-settings-title">
           <header className="notification-settings-header"><h3 id="telegram-settings-title">Telegram</h3><span className={`notification-state ${saved?.telegram ? "configured" : ""}`}>{saved?.telegram ? <CheckCircle2 size={13} /> : null}{saved?.telegram ? ui(locale, "已配置", "Configured") : ui(locale, "未配置", "Not configured")}</span></header>
           <div className="notification-fields">
-            <label className="notification-token-field"><span>Bot Token</span><input type="password" required maxLength={512} autoComplete="off" value={telegram.bot_token} onChange={(event) => updateTelegram("bot_token", event.target.value)} placeholder="123456789:AA..." /></label>
-            <label><span>Chat ID</span><input type="password" required maxLength={128} autoComplete="off" value={telegram.chat_id} onChange={(event) => updateTelegram("chat_id", event.target.value)} placeholder="-1001234567890" /></label>
+            <label className="notification-token-field"><span>Bot Token</span><PasswordInput locale={locale} required maxLength={512} autoComplete="off" value={telegram.bot_token} onChange={(event) => updateTelegram("bot_token", event.target.value)} placeholder="123456789:AA..." /></label>
+            <label><span>Chat ID</span><PasswordInput locale={locale} required maxLength={128} autoComplete="off" value={telegram.chat_id} onChange={(event) => updateTelegram("chat_id", event.target.value)} placeholder="-1001234567890" /></label>
             <label><span>{ui(locale, "话题 ID（可选）", "Topic ID (optional)")}</span><input type="number" min="1" value={telegram.message_thread_id ?? ""} onChange={(event) => updateTelegram("message_thread_id", event.target.value ? Number(event.target.value) : null)} /></label>
           </div>
           <label className="notification-template"><span>{ui(locale, "消息模板", "Message template")}</span><textarea required rows={5} maxLength={4000} value={telegram.template} onChange={(event) => updateTelegram("template", event.target.value)} /></label>
@@ -173,13 +182,12 @@ function WebhookFields({ locale, value, saved, onChange, onTest, onClear }: {
   return <section className="notification-settings" data-channel={value.preset} aria-labelledby={titleId}>
     <header className="notification-settings-header"><h3 id={titleId}>{name}</h3><span className={`notification-state ${saved ? "configured" : ""}`}>{saved ? <CheckCircle2 size={13} /> : null}{saved ? ui(locale, "已配置", "Configured") : ui(locale, "未配置", "Not configured")}</span></header>
     {!saved && value.preset !== "custom" ? <p className="settings-hint">{ui(locale, "已填入此渠道的请求示例，请替换 YOUR_KEY、YOUR_TOKEN、YOUR_DEVICE_KEY 等占位值。", "This channel's request example is prefilled; replace placeholders such as YOUR_KEY, YOUR_TOKEN and YOUR_DEVICE_KEY.")}</p> : null}
-    <label><span>{ui(locale, "推送 URL", "Push URL")}</span><input type="password" required={!saved?.url_configured} maxLength={2048} autoComplete="off" value={value.url} onChange={(event) => onChange({ url: event.target.value })} placeholder={saved?.url_configured ? kept : "https://example.com/webhook"} /></label>
+    <label><span>{ui(locale, "推送 URL", "Push URL")}</span><PasswordInput locale={locale} required={!saved?.url_configured} maxLength={2048} autoComplete="off" value={value.url} onChange={(event) => onChange({ url: event.target.value })} placeholder={saved?.url_configured ? kept : "https://example.com/webhook"} /></label>
     <label><span>{ui(locale, "请求头（可选，一行一个 Name: value）", "Headers (optional, one Name: value per line)")}</span><textarea rows={3} maxLength={8192} autoComplete="off" value={value.headers} onChange={(event) => onChange({ headers: event.target.value })} placeholder={value.clear_headers ? ui(locale, "保存后清除请求头", "Headers will be cleared on save") : saved?.headers_configured ? kept : "Authorization: Bearer ..."} /></label>
     {saved?.headers_configured ? <div className="notification-actions"><button type="button" className="secondary-btn compact" onClick={() => onChange({ headers: "", clear_headers: !value.clear_headers })}>{value.clear_headers ? ui(locale, "保留已保存请求头", "Keep saved headers") : ui(locale, "清除请求头（保存后生效）", "Clear headers on save")}</button></div> : null}
     <label className="notification-template"><span>{ui(locale, "JSON 请求体模板", "JSON body template")}</span><textarea required={!saved?.body_configured} rows={6} maxLength={16384} autoComplete="off" spellCheck={false} value={value.body} onChange={(event) => onChange({ body: event.target.value })} placeholder={saved?.body_configured ? kept : WEBHOOK_PRESETS[value.preset].body} /></label>
     <p className="settings-hint">{ui(locale, "支持 {{title}}、{{message}}、{{node}} / {{server}}、{{event}}、{{site}}、{{time}}，占位符需放在 JSON 字符串引号内。", "Supports {{title}}, {{message}}, {{node}} / {{server}}, {{event}}, {{site}} and {{time}}; place placeholders inside JSON string quotes.")}</p>
     {preview.body ? <details className="webhook-preview" open={!preview.valid}><summary>{ui(locale, "请求体预览", "Body preview")}</summary><pre className={preview.valid ? "" : "form-error"}>{preview.body}</pre></details> : null}
-    <p className="settings-hint">{ui(locale, "URL、请求头和请求体可能包含密钥，保存后不回读；留空表示保留。以 POST 发送，默认 JSON，不跟随地址跳转。测试使用已保存的配置。", "URL, headers and body may contain secrets and are never returned after saving; empty fields keep current values. Sends POST with JSON by default and does not follow redirects. Tests use saved settings.")}</p>
     {value.preset === "dingtalk" || value.preset === "feishu" ? <p className="settings-hint">{ui(locale, "机器人关键词请包含 NodeFlare；暂不支持动态签名。", "Include NodeFlare in the bot's keywords; dynamic signatures are not supported.")}</p> : null}
     <div className="notification-actions">
       {saved ? <button type="button" className="secondary-btn danger" onClick={onClear}><Trash2 size={15} />{ui(locale, `清除 ${name}`, `Clear ${name}`)}</button> : null}
